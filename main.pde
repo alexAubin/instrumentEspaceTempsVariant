@@ -14,6 +14,7 @@
 
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 
 int ledPin = 13;                  // LED test pin
 int rxPin = 0;                    // RX PIN 
@@ -27,6 +28,8 @@ int conta=0;
 int indices[13];
 bool hasNewStuff = false;
 
+void parseShitAndStuff();
+
 void setup() {
     pinMode(ledPin, OUTPUT);       // Initialize LED pin
     pinMode(rxPin, INPUT);
@@ -39,19 +42,21 @@ void setup() {
 
 void loop() 
 {
+    //Serial.print("test ?\n");
     digitalWrite(ledPin, HIGH);
     // Read a byte of the serial port
     byteGPS=Serial.read();         
   
-
     // See if the port is empty yet
     if (byteGPS == -1) 
     {   
+        
         if (hasNewStuff == true)
         {
             Serial.print("\n");
             hasNewStuff=false;
         }
+        
         delay(100); 
     } 
     else
@@ -60,10 +65,10 @@ void loop()
         // note: there is a potential buffer overflow here!
         linea[conta]=byteGPS;        // If there is serial port data, it is put in the buffer
         conta++;                      
-        if (byteGPS < 0x10) Serial.print('0'); 
-        Serial.print(byteGPS,HEX);
-        Serial.print(' ');
-        if (byteGPS==0xF0)
+        //if (byteGPS < 0x10) Serial.print('0'); 
+        //Serial.print(byteGPS,HEX);
+        //Serial.print(' ');
+        if (byteGPS==0x0D)
         {            // If the received byte is = to 13, end of transmission
             // note: the actual end of transmission is <CR><LF> (i.e. 0x13 0x10)
             digitalWrite(ledPin, LOW); 
@@ -96,8 +101,6 @@ void loop()
                         cont++;
                     }
                 }
-                Serial.println("");      // ... and write to the serial port
-                Serial.println("");
                 Serial.println("---------------");
                 for (int i=0;i<12;i++){
                     switch(i)
@@ -122,6 +125,7 @@ void loop()
                     Serial.println("");
                 }
                 Serial.println("---------------");
+                parseShitAndStuff();
             }
             conta=0;                    // Reset the buffer
             for (int i=0;i<300;i++){    //  
@@ -129,5 +133,82 @@ void loop()
             }                 
         }
     }
+}
+
+void parseShitAndStuff()
+{
+    // Parse shit and stuff
+    int j;
+
+    // Date
+    j = indices[8];
+    int day   = 10 * (linea[j+1]-48) + (linea[j+2]-48);
+    int month = 10 * (linea[j+3]-48) + (linea[j+4]-48);
+    int year  = 10 * (linea[j+5]-48) + (linea[j+6]-48);
+
+    // Latitude
+    j = indices[2];
+    float latitude  =    10 * (linea[j+1]-48) 
+                    +     1 * (linea[j+2]-48)
+                    +   0.1 * (linea[j+3]-48)
+                    +  0.01 * (linea[j+4]-48);
+
+    // Longitude
+    j = indices[4];
+    float longitude  =   100 * (linea[j+1]-48) 
+                     +    10 * (linea[j+2]-48)
+                     +     1 * (linea[j+3]-48)
+                     +   0.1 * (linea[j+4]-48)
+                     +  0.01 * (linea[j+5]-48);
+
+
+    // Compute shit for motherfucking stuff
+    int N1 = month * 275 / 9;
+    int N2 = (month + 9) / 12;
+    int K = 1 + (year - 4 * ( year / 4 ) + 2 ) / 3;
+    int rank = N1 - N2 * K + day - 30;
+
+
+    float DegToRad = 3.141592653 / 180;
+    float M = (357 + 0.9856 * rank) * DegToRad;
+
+    Serial.print("M :");
+    Serial.print(M);
+
+    float C = (1.914 * sin(M) + 0.02 * sin(2*M)) * DegToRad;
+
+    Serial.print("C :");
+    Serial.print(C);
+
+    float L = (280 + C/DegToRad + 0.9856 * rank) * DegToRad;
+
+    Serial.print("L :");
+    Serial.print(L);
+
+    float R = -2.465 * sin(2*L) + 0.053 * sin(4*L);
+
+    Serial.print("R :");
+    Serial.print(R);
+
+    float ET = (C/DegToRad+R) * 4;
+
+    Serial.print("ET :");
+    Serial.print(ET);
+
+    float dec = asin(0.3978 * sin(L));
+
+    Serial.print("dec :");
+    Serial.print(dec);
+
+    float H0 = acos( (-0.01454 - sin(dec) * sin(latitude)) / (cos(dec) * cos(latitude) ) ) / (DegToRad * 15);
+
+    Serial.print("H0 :");
+    Serial.print(H0);
+
+    float Hlever = 12 - H0 + ET / 60 + longitude / 15;
+
+    Serial.print("H_lever :");
+    Serial.print(Hlever);
+
 }
 
