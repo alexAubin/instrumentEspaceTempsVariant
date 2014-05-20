@@ -104,6 +104,7 @@ void loop()
         parseDataFromGPS();
         printDebugGPSInfoToSerial();
         updateVariableTimeInstrument();
+        resetDataFromGPSBuffer();
     }
 
 }
