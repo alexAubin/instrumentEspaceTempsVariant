@@ -76,7 +76,7 @@ GPSInfoStruct GPSInfo;
 
 void resetDataFromGPSBuffer();
 bool readByteFromGPS();
-void parseDataFromGPS();
+bool parseDataFromGPS();
 void printDebugGPSInfoToSerial();
 void updateVariableTimeInstrument();
 
@@ -101,9 +101,12 @@ void loop()
 
     if (endOfTransmissionDetected)
     {
-        parseDataFromGPS();
-        printDebugGPSInfoToSerial();
-        updateVariableTimeInstrument();
+        bool foundTarget = parseDataFromGPS();
+        if (foundTarget)
+        {
+            printDebugGPSInfoToSerial();
+            updateVariableTimeInstrument();
+        }
         resetDataFromGPSBuffer();
     }
 
@@ -143,10 +146,8 @@ bool readByteFromGPS()
     
     // Debug prints
     
-    /*
-    Serial.print(incomingByteFromSerial,HEX);
-    Serial.print(' ');
-    */
+    //Serial.print(incomingByteFromSerial,HEX);
+    //Serial.print(' ');
 
     // If the byte is <CR> (carriage return), 
     // it means ends of transmission (actually this is <CR><LF>, 0x0D 0x0A)
@@ -158,15 +159,24 @@ bool readByteFromGPS()
 // #   Parse the content of the GPS buffer to retrieve the date and position   #
 // #############################################################################
 
-void parseDataFromGPS()
+bool parseDataFromGPS()
 {
+    Serial.println("---------------");
+    for (int j=0 ; j < 100 ; j++)
+    {
+        Serial.print(dataFromGPS[j]); 
+    }
+    Serial.println("---------------");
+
+   
+
     // Check that the received command starts with targetString (something like $GPRMC)
     // Note : the loop starts at 1, because this code is clowny and the first byte is
     // the <LF> (0x10) from the previous transmission.
     for (int i=1;i<7;i++)
     {     
         // If the comparison fails at some point, we stop this function
-        if (dataFromGPS[i] != targetString[i-1]) { return; }
+        if (dataFromGPS[i] != targetString[i-1]) { return false; }
     }
 
     // Parse the position of the separators (',' and '*') 
@@ -206,7 +216,10 @@ void parseDataFromGPS()
                        +     1 * (dataFromGPS[j+3]-48)
                        +   0.1 * (dataFromGPS[j+4]-48)
                        +  0.01 * (dataFromGPS[j+5]-48);
+
+    return true;
 }
+
 
 // #####################################################
 // #   Print all the info from the GPS in the Serial   #
@@ -214,6 +227,7 @@ void parseDataFromGPS()
 
 void printDebugGPSInfoToSerial()
 {
+
     // Print info in serial output
     Serial.println("---------------");
     for (int i=0;i<12;i++)
