@@ -29,6 +29,8 @@ int indices[13];
 bool hasNewStuff = false;
 
 void parseShitAndStuff();
+void printFloat(float f);
+void printFloatln(float f);
 
 void setup() {
     pinMode(ledPin, OUTPUT);       // Initialize LED pin
@@ -101,6 +103,7 @@ void loop()
                         cont++;
                     }
                 }
+                /*
                 Serial.println("---------------");
                 for (int i=0;i<12;i++){
                     switch(i)
@@ -125,6 +128,7 @@ void loop()
                     Serial.println("");
                 }
                 Serial.println("---------------");
+                */
                 parseShitAndStuff();
             }
             conta=0;                    // Reset the buffer
@@ -139,6 +143,13 @@ void parseShitAndStuff()
 {
     // Parse shit and stuff
     int j;
+
+    // Time
+    j = indices[0];
+    int hour    = 10 * (linea[j+1]-48) + (linea[j+2]-48);
+    int minutes = 10 * (linea[j+3]-48) + (linea[j+4]-48);
+    //int seconds = 10 * (linea[j+5]-48) + (linea[j+6]-48);
+    float current_time = hour + (minutes / 60.0);
 
     // Date
     j = indices[8];
@@ -167,48 +178,81 @@ void parseShitAndStuff()
     int N2 = (month + 9) / 12;
     int K = 1 + (year - 4 * ( year / 4 ) + 2 ) / 3;
     int rank = N1 - N2 * K + day - 30;
-
-
-    float DegToRad = 3.141592653 / 180;
+    float DegToRad = M_PI / 180.0;
     float M = (357 + 0.9856 * rank) * DegToRad;
-
-    Serial.print("M :");
-    Serial.print(M);
-
-    float C = (1.914 * sin(M) + 0.02 * sin(2*M)) * DegToRad;
-
-    Serial.print("C :");
-    Serial.print(C);
-
-    float L = (280 + C/DegToRad + 0.9856 * rank) * DegToRad;
-
-    Serial.print("L :");
-    Serial.print(L);
-
+    float C = (1.914 * sin(M) + 0.02 * sin(2*M));
+    float L = (280 + C + 0.9856 * rank) * DegToRad;
     float R = -2.465 * sin(2*L) + 0.053 * sin(4*L);
-
-    Serial.print("R :");
-    Serial.print(R);
-
-    float ET = (C/DegToRad+R) * 4;
-
-    Serial.print("ET :");
-    Serial.print(ET);
-
+    float ET = (C+R) * 4;
     float dec = asin(0.3978 * sin(L));
+    float H0 = acos( (-0.01454 - sin(dec) * sin(latitude*DegToRad)) / (cos(dec) * cos(latitude*DegToRad) ) ) / (DegToRad * 15);
+    float Hlever   = 12 - H0 + ET / 60 + longitude / 15;
+    float Hcoucher = 12 + H0 + ET / 60 + longitude / 15;
 
-    Serial.print("dec :");
-    Serial.print(dec);
 
-    float H0 = acos( (-0.01454 - sin(dec) * sin(latitude)) / (cos(dec) * cos(latitude) ) ) / (DegToRad * 15);
-
-    Serial.print("H0 :");
-    Serial.print(H0);
-
-    float Hlever = 12 - H0 + ET / 60 + longitude / 15;
+    int Hlever_hours   = int(Hlever);
+    int Hlever_minutes = int((Hlever - Hlever_hours) * 60);
+    
+    int Hcoucher_hours   = int(Hcoucher);
+    int Hcoucher_minutes = int((Hcoucher - Hcoucher_hours) * 60);
 
     Serial.print("H_lever :");
-    Serial.print(Hlever);
+    Serial.print(Hlever_hours);
+    Serial.print(":");
+    Serial.println(Hlever_minutes);
+    
+    Serial.print("H_coucher :");
+    Serial.print(Hcoucher_hours);
+    Serial.print(":");
+    Serial.println(Hcoucher_minutes);
+
+    float Sol_duree = Hcoucher - Hlever;
+
+    int Sol_duree_hours   = int(Sol_duree);
+    int Sol_duree_minutes = int((Sol_duree - Sol_duree_hours) * 60);
+    
+    Serial.print("Sol_duree :");
+    Serial.print(Sol_duree_hours);
+    Serial.print(":");
+    Serial.println(Sol_duree_minutes);
+
+    float S_var_Mean = Sol_duree / 12;
+
+    Serial.print("Moyenne de S-var :");
+    printFloatln(S_var_Mean);
+
+    float delta_T = current_time - Hlever;
+
+    Serial.print("Delta t :");
+    printFloatln(delta_T);
+    
+    float current_S_var_Jour = 1.0 + (S_var_Mean - 1.0) * M_PI / 2.0 * sin(delta_T * M_PI / Sol_duree);
+
+    Serial.print("Current_S-var_Jour :");
+    printFloatln(current_S_var_Jour);
 
 }
+
+void printFloat(float f)
+{
+    if (f > 1) Serial.print(int(f));
+    else Serial.print('0');
+
+    Serial.print('.');
+   
+    f = f - int(f);    int a = int(f *    10);  Serial.print(a);
+    f = f - a * 0.1;   int b = int(f *   100);  Serial.print(b);
+    f = f - b * 0.01;  int c = int(f *  1000);  Serial.print(c);
+    f = f - c * 0.001; int d = int(f * 10000);  Serial.print(d);
+}
+
+void printFloatln(float f)
+{
+    printFloat(f);
+    Serial.print('\n');
+}
+
+
+
+
 
