@@ -52,13 +52,6 @@ void loop()
     // See if the port is empty yet
     if (byteGPS == -1) 
     {   
-        
-        if (hasNewStuff == true)
-        {
-            Serial.print("\n");
-            hasNewStuff=false;
-        }
-        
         delay(100); 
     } 
     else
@@ -141,6 +134,7 @@ void loop()
 
 void parseShitAndStuff()
 {
+    Serial.println("----------");
     // Parse shit and stuff
     int j;
 
@@ -205,9 +199,14 @@ void parseShitAndStuff()
     Serial.print(Hcoucher_hours);
     Serial.print(":");
     Serial.println(Hcoucher_minutes);
+    
+    float delta_lever   = current_time - Hlever;
+    float delta_coucher = current_time - Hcoucher;
 
-    float Sol_duree = Hcoucher - Hlever;
+    float Sol_duree   = Hcoucher - Hlever;
+    float Night_duree = 24 - Sol_duree;
 
+    /*
     int Sol_duree_hours   = int(Sol_duree);
     int Sol_duree_minutes = int((Sol_duree - Sol_duree_hours) * 60);
     
@@ -215,21 +214,33 @@ void parseShitAndStuff()
     Serial.print(Sol_duree_hours);
     Serial.print(":");
     Serial.println(Sol_duree_minutes);
+    */
 
-    float S_var_Mean = Sol_duree / 12;
+    Serial.print("Delta lever :");
+    printFloatln(delta_lever);
+    Serial.print("Delta coucher :");
+    printFloatln(delta_coucher);
+    
+    float S_var_mean;
+    float current_S_var;
+
+    // TODO : properly manage case between hour = 0 and hour = Hlever (check night's hour of previous day)
+    if ((current_time > Hlever) && (current_time < Hcoucher))
+    {
+        S_var_mean = Sol_duree / 12;
+        current_S_var = 1.0 + (S_var_mean - 1.0) * M_PI / 2.0 * sin(delta_lever * M_PI / Sol_duree);
+    }
+    else
+    {
+        S_var_mean = Night_duree / 12;
+        current_S_var = 1.0 + (S_var_mean - 1.0) * M_PI / 2.0 * sin(delta_coucher * M_PI / Night_duree);
+    }
 
     Serial.print("Moyenne de S-var :");
-    printFloatln(S_var_Mean);
+    printFloatln(S_var_mean);
 
-    float delta_T = current_time - Hlever;
-
-    Serial.print("Delta t :");
-    printFloatln(delta_T);
-    
-    float current_S_var_Jour = 1.0 + (S_var_Mean - 1.0) * M_PI / 2.0 * sin(delta_T * M_PI / Sol_duree);
-
-    Serial.print("Current_S-var_Jour :");
-    printFloatln(current_S_var_Jour);
+    Serial.print("Current_S-var :");
+    printFloatln(current_S_var);
 
 }
 
