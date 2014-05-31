@@ -96,7 +96,7 @@ void loop()
                         cont++;
                     }
                 }
-                /*
+                
                 Serial.println("---------------");
                 for (int i=0;i<12;i++){
                     switch(i)
@@ -121,6 +121,7 @@ void loop()
                     Serial.println("");
                 }
                 Serial.println("---------------");
+                /*
                 */
                 parseShitAndStuff();
             }
@@ -140,10 +141,17 @@ void parseShitAndStuff()
 
     // Time
     j = indices[0];
-    int hour    = 10 * (linea[j+1]-48) + (linea[j+2]-48);
+    int hour    = 10 * (linea[j+1]-48) + (linea[j+2]-48) + 2;
     int minutes = 10 * (linea[j+3]-48) + (linea[j+4]-48);
-    //int seconds = 10 * (linea[j+5]-48) + (linea[j+6]-48);
-    float current_time = hour + (minutes / 60.0);
+    int seconds = 10 * (linea[j+5]-48) + (linea[j+6]-48);
+    float current_time = hour + (minutes / 60.0) + (seconds / 3600.0);
+
+    Serial.print("Hour (corrected) : ");
+    Serial.print(hour);
+    Serial.print(":");
+    Serial.print(minutes);
+    Serial.print(":");
+    Serial.println(seconds);
 
     // Date
     j = indices[8];
@@ -180,8 +188,8 @@ void parseShitAndStuff()
     float ET = (C+R) * 4;
     float dec = asin(0.3978 * sin(L));
     float H0 = acos( (-0.01454 - sin(dec) * sin(latitude*DegToRad)) / (cos(dec) * cos(latitude*DegToRad) ) ) / (DegToRad * 15);
-    float Hlever   = 12 - H0 + ET / 60 + longitude / 15;
-    float Hcoucher = 12 + H0 + ET / 60 + longitude / 15;
+    float Hlever   = 12 - H0 + ET / 60 + longitude / 15 + 1;
+    float Hcoucher = 12 + H0 + ET / 60 + longitude / 15 + 1;
 
 
     int Hlever_hours   = int(Hlever);
@@ -199,14 +207,15 @@ void parseShitAndStuff()
     Serial.print(Hcoucher_hours);
     Serial.print(":");
     Serial.println(Hcoucher_minutes);
-    
+    /*
+    */
+
     float delta_lever   = current_time - Hlever;
     float delta_coucher = current_time - Hcoucher;
 
     float Sol_duree   = Hcoucher - Hlever;
     float Night_duree = 24 - Sol_duree;
 
-    /*
     int Sol_duree_hours   = int(Sol_duree);
     int Sol_duree_minutes = int((Sol_duree - Sol_duree_hours) * 60);
     
@@ -214,13 +223,17 @@ void parseShitAndStuff()
     Serial.print(Sol_duree_hours);
     Serial.print(":");
     Serial.println(Sol_duree_minutes);
+    /*
     */
 
     Serial.print("Delta lever :");
     printFloatln(delta_lever);
     Serial.print("Delta coucher :");
     printFloatln(delta_coucher);
-    
+    /*
+    Serial.print("Delta lever :");
+    */
+
     float S_var_mean;
     float current_S_var;
 
@@ -238,9 +251,21 @@ void parseShitAndStuff()
 
     Serial.print("Moyenne de S-var :");
     printFloatln(S_var_mean);
+    /*
+    */
 
     Serial.print("Current_S-var :");
     printFloatln(current_S_var);
+
+    float H_var = delta_lever + (1.0 - S_var_mean) * Sol_duree / 2.0 * (1.0 - cos(delta_lever * M_PI / Sol_duree));
+    int H_var_hours = int(H_var);
+    int H_var_minutes = (H_var - H_var_hours) * 60;
+
+    Serial.print("Current H-var : ");
+    Serial.print(H_var_hours);
+    Serial.print(":");
+    Serial.println(H_var_minutes);
+    
 
 }
 
