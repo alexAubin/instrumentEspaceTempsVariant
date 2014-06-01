@@ -12,9 +12,11 @@
 
  */ 
 
-#include <string.h>
 #include <ctype.h>
 #include <math.h>
+#include "LCDInterface.h"
+
+using namespace std;
 
 int ledPin = 13;                  // LED test pin
 int rxPin = 0;                    // RX PIN 
@@ -32,14 +34,21 @@ void parseShitAndStuff();
 void printFloat(float f);
 void printFloatln(float f);
 
-void setup() {
+void printFloatInString(char* output, float f);
+void printHourInString(char* output, int h, int m);
+void appendString(char* output, char* input);
+
+void setup()
+{
     pinMode(ledPin, OUTPUT);       // Initialize LED pin
     pinMode(rxPin, INPUT);
     pinMode(txPin, OUTPUT);
     Serial.begin(4800);
     for (int i=0;i<300;i++){       // Initialize a buffer for received data
         linea[i]=' ';
-    }   
+    }
+
+    LCDInit();
 }
 
 void loop() 
@@ -96,7 +105,7 @@ void loop()
                         cont++;
                     }
                 }
-                
+                /* 
                 Serial.println("---------------");
                 for (int i=0;i<12;i++){
                     switch(i)
@@ -121,7 +130,6 @@ void loop()
                     Serial.println("");
                 }
                 Serial.println("---------------");
-                /*
                 */
                 parseShitAndStuff();
             }
@@ -257,7 +265,15 @@ void parseShitAndStuff()
     Serial.print("Current_S-var :");
     printFloatln(current_S_var);
 
-    float H_var = delta_lever + (1.0 - S_var_mean) * Sol_duree / 2.0 * (1.0 - cos(delta_lever * M_PI / Sol_duree));
+    float H_var;
+    if ((current_time > Hlever) && (current_time < Hcoucher))
+    {
+         H_var = delta_lever + (1.0/S_var_mean-1) * Sol_duree / 2.0 * (1.0 - cos(delta_lever * M_PI / Sol_duree));
+    }
+    else
+    {
+        H_var = 12 + delta_coucher + (1.0/S_var_mean-1) * Night_duree / 2.0 * (1.0 - cos(delta_coucher * M_PI / Night_duree)); 
+    }
     int H_var_hours = int(H_var);
     int H_var_minutes = (H_var - H_var_hours) * 60;
 
@@ -265,12 +281,49 @@ void parseShitAndStuff()
     Serial.print(H_var_hours);
     Serial.print(":");
     Serial.println(H_var_minutes);
+   
+  
+    char message[72] = "\0";
     
+    appendString(message,"Hstand ");
+    printHourInString(message+7, hour, minutes);
+    //appendString(message,"");
+    
+    appendString(message,"            ");
+    
+    appendString(message,"Svar  ");
+    printFloatInString(message+30, current_S_var);
+    
+    appendString(message,"Hvar   ");
+    printHourInString(message+43, H_var_hours,H_var_minutes);
+    
+    gotoXY(0, 0);
+    LCDString(message);
 
+}
+
+void appendString(char* output, char* input)
+{
+    int i = 0;
+    for (i = 0 ; ; i++) { if (output[i] == '\0') break; }
+
+    for (int j = 0 ; input[j] != '\0' ; j++)
+    {
+        output[i++] = input[j]; 
+    }
+    output[i] = '\0';
+
+    return;
 }
 
 void printFloat(float f)
 {
+    if (f < 0) 
+    {
+        Serial.print('-');
+        f = -f;
+    }
+
     if (f > 1) Serial.print(int(f));
     else Serial.print('0');
 
@@ -280,6 +333,51 @@ void printFloat(float f)
     f = f - a * 0.1;   int b = int(f *   100);  Serial.print(b);
     f = f - b * 0.01;  int c = int(f *  1000);  Serial.print(c);
     f = f - c * 0.001; int d = int(f * 10000);  Serial.print(d);
+}
+
+void printFloatInString(char* output, float f)
+{
+    int index = 0;
+    if (f < 0) 
+    {
+        output[index++] = '-';
+        f = -f;
+    }
+
+    if (f > 1) output[index++] = (int(f)+48); 
+    else output[index++] = '0'; 
+
+    output[index++] = '.'; 
+   
+    f -= int(f);    int a = int(f *    10); output[index++] = a+48; 
+    f -= a * 0.1;   int b = int(f *   100); output[index++] = b+48; 
+    f -= b * 0.01;  int c = int(f *  1000); output[index++] = c+48; 
+    f -= c * 0.001; int d = int(f * 10000); output[index++] = d+48;
+
+    output[index] = '\0';
+
+    return;
+}
+
+void printHourInString(char* output, int h, int m)
+{
+    int index = 0;
+
+    if (h >= 10) output[index++] = int(h/10)+48; 
+    else output[index++] = '0';
+    if (h > 1)  output[index++] = int(h - (h/10)*10)+48; 
+    else output[index++] = '0';
+
+    output[index++] = ';'; 
+    
+    if (m >= 10) output[index++] = int(m/10)+48; 
+    else output[index++] = '0';
+    if (m > 1)  output[index++] = int(m - (m/10)*10)+48; 
+    else output[index++] = '0';
+    
+    output[index] = '\0';
+
+    return;
 }
 
 void printFloatln(float f)
