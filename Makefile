@@ -357,7 +357,7 @@ $(TARGET).elf: $(ARDUINOLIB) $(OBJECTS)
 
 %.o: %.pde
 	mkdir -p .dep/$(dir $<)
-	$(COMPILE.cpp) $(CPPDEPFLAGS) -o $@ -x c++ -include $(ARDUINOCOREDIR)/Arduino.h $<
+	$(COMPILE.cpp) $(CPPDEPFLAGS) -o $@ -x c++ -include $(ARDUINOCOREDIR)/Arduino.h $< $(GCCPARSER)
 
 # building the arduino library
 
