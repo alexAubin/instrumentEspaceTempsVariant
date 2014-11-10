@@ -157,7 +157,7 @@ void LCDBitmap(char my_array[])
 //pixels on each side of the character for readability.
 void LCDCharacter(char character) 
 {
-  LCDWrite(LCD_DATA, 0x00); //Blank vertical line padding
+  //LCDWrite(LCD_DATA, 0x00); //Blank vertical line padding
 
   for (int index = 0 ; index < 3 ; index++)
     LCDWrite(LCD_DATA, ASCII[character - 0x20][index]);

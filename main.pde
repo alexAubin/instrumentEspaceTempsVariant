@@ -34,8 +34,9 @@ void parseShitAndStuff();
 void printFloat(float f);
 void printFloatln(float f);
 
+void printIntInString(char* output, int i);
 void printFloatInString(char* output, float f);
-void printHourInString(char* output, int h, int m);
+void printHourInString(char* output, int h, int m, char separator);
 void appendString(char* output, char* input);
 
 void setup()
@@ -105,7 +106,7 @@ void loop()
                         cont++;
                     }
                 }
-                /* 
+                 
                 Serial.println("---------------");
                 for (int i=0;i<12;i++){
                     switch(i)
@@ -130,7 +131,7 @@ void loop()
                     Serial.println("");
                 }
                 Serial.println("---------------");
-                */
+               
                 parseShitAndStuff();
             }
             conta=0;                    // Reset the buffer
@@ -149,12 +150,12 @@ void parseShitAndStuff()
 
     // Time
     j = indices[0];
-    int hour    = 10 * (linea[j+1]-48) + (linea[j+2]-48) + 2;
+    int hour    = 10 * (linea[j+1]-48) + (linea[j+2]-48);
     int minutes = 10 * (linea[j+3]-48) + (linea[j+4]-48);
     int seconds = 10 * (linea[j+5]-48) + (linea[j+6]-48);
     float current_time = hour + (minutes / 60.0) + (seconds / 3600.0);
 
-    Serial.print("Hour (corrected) : ");
+    Serial.print("Hour (UTC +0) : ");
     Serial.print(hour);
     Serial.print(":");
     Serial.print(minutes);
@@ -174,6 +175,10 @@ void parseShitAndStuff()
                     +   0.1 * (linea[j+3]-48)
                     +  0.01 * (linea[j+4]-48);
 
+    j = indices[3];
+    char directionlat[1];
+    directionlat[0] = linea[j+1];
+
     // Longitude
     j = indices[4];
     float longitude  =   100 * (linea[j+1]-48) 
@@ -181,7 +186,9 @@ void parseShitAndStuff()
                      +     1 * (linea[j+3]-48)
                      +   0.1 * (linea[j+4]-48)
                      +  0.01 * (linea[j+5]-48);
-
+    j = indices[5];
+    char directionlong[1];
+    directionlong[0] = linea[j+1];
 
     // Compute shit for motherfucking stuff
     int N1 = month * 275 / 9;
@@ -196,9 +203,11 @@ void parseShitAndStuff()
     float ET = (C+R) * 4;
     float dec = asin(0.3978 * sin(L));
     float H0 = acos( (-0.01454 - sin(dec) * sin(latitude*DegToRad)) / (cos(dec) * cos(latitude*DegToRad) ) ) / (DegToRad * 15);
-    float Hlever   = 12 - H0 + ET / 60 + longitude / 15 + 1;
-    float Hcoucher = 12 + H0 + ET / 60 + longitude / 15 + 1;
+    float Hlever   = 12 - H0 + ET / 60 + longitude / 15 - 1;
+    float Hcoucher = 12 + H0 + ET / 60 + longitude / 15 - 1;
 
+    int lati = latitude / 100;
+    int longi = longitude / 100;
 
     int Hlever_hours   = int(Hlever);
     int Hlever_minutes = int((Hlever - Hlever_hours) * 60);
@@ -206,17 +215,15 @@ void parseShitAndStuff()
     int Hcoucher_hours   = int(Hcoucher);
     int Hcoucher_minutes = int((Hcoucher - Hcoucher_hours) * 60);
 
-    Serial.print("H_lever :");
+    Serial.print("H_lever : ");
     Serial.print(Hlever_hours);
     Serial.print(":");
     Serial.println(Hlever_minutes);
     
-    Serial.print("H_coucher :");
+    Serial.print("H_coucher : ");
     Serial.print(Hcoucher_hours);
     Serial.print(":");
     Serial.println(Hcoucher_minutes);
-    /*
-    */
 
     float delta_lever   = current_time - Hlever;
     float delta_coucher = current_time - Hcoucher;
@@ -227,20 +234,15 @@ void parseShitAndStuff()
     int Sol_duree_hours   = int(Sol_duree);
     int Sol_duree_minutes = int((Sol_duree - Sol_duree_hours) * 60);
     
-    Serial.print("Sol_duree :");
+    Serial.print("Sol_duree : ");
     Serial.print(Sol_duree_hours);
     Serial.print(":");
     Serial.println(Sol_duree_minutes);
-    /*
-    */
 
-    Serial.print("Delta lever :");
+    Serial.print("Delta lever : ");
     printFloatln(delta_lever);
-    Serial.print("Delta coucher :");
+    Serial.print("Delta coucher : ");
     printFloatln(delta_coucher);
-    /*
-    Serial.print("Delta lever :");
-    */
 
     float S_var_mean;
     float current_S_var;
@@ -257,12 +259,10 @@ void parseShitAndStuff()
         current_S_var = 1.0 + (S_var_mean - 1.0) * M_PI / 2.0 * sin(delta_coucher * M_PI / Night_duree);
     }
 
-    Serial.print("Moyenne de S-var :");
+    Serial.print("Moyenne de S-var : ");
     printFloatln(S_var_mean);
-    /*
-    */
 
-    Serial.print("Current_S-var :");
+    Serial.print("Current_S-var : ");
     printFloatln(current_S_var);
 
     float H_var;
@@ -272,31 +272,34 @@ void parseShitAndStuff()
     }
     else
     {
-        H_var = 12 + delta_coucher + (1.0/S_var_mean-1) * Night_duree / 2.0 * (1.0 - cos(delta_coucher * M_PI / Night_duree)); 
+        H_var = delta_coucher + (1.0/S_var_mean-1) * Night_duree / 2.0 * (1.0 - cos(delta_coucher * M_PI / Night_duree)); 
     }
     int H_var_hours = int(H_var);
     int H_var_minutes = (H_var - H_var_hours) * 60;
 
     Serial.print("Current H-var : ");
     Serial.print(H_var_hours);
-    Serial.print(":");
+    Serial.print(";");
     Serial.println(H_var_minutes);
    
   
     char message[72] = "\0";
     
-    appendString(message,"Hstand ");
-    printHourInString(message+7, hour, minutes);
-    //appendString(message,"");
+    appendString(message,"Hstand: ");
+    //hour + 1 for Hstand = UTC+1
+    printHourInString(message+8, hour + 1, minutes, ':');
     
-    appendString(message,"            ");
+    appendString(message,"        ");
     
-    appendString(message,"Svar  ");
-    printFloatInString(message+30, current_S_var);
+    appendString(message, "Svar: ");
+    printFloatInString(message+27, current_S_var);
+ 
+    appendString(message,"         ");
+
+    appendString(message,"Hvar: ");
+    printHourInString(message+48, H_var_hours,H_var_minutes, ';');
     
-    appendString(message,"Hvar   ");
-    printHourInString(message+43, H_var_hours,H_var_minutes);
-    
+    appendString(message,"                                                        ");
     gotoXY(0, 0);
     LCDString(message);
 
@@ -359,7 +362,31 @@ void printFloatInString(char* output, float f)
     return;
 }
 
-void printHourInString(char* output, int h, int m)
+
+void printIntInString(char* output, int i)
+{
+    int index = 0;
+    if (i < 0) 
+    {
+        output[index++] = '-';
+        i = -i;
+    }
+
+    if (i >= 10) 
+    {
+        output[index++] = (int(i/10)+48); 
+    i = (int) (i / 10);  
+    }
+    
+    output[index++] = (int(i)+48); 
+    output[index] = '\0';
+
+    return;
+}
+
+
+
+void printHourInString(char* output, int h, int m, char separator)
 {
     int index = 0;
 
@@ -368,7 +395,8 @@ void printHourInString(char* output, int h, int m)
     if (h > 1)  output[index++] = int(h - (h/10)*10)+48; 
     else output[index++] = '0';
 
-    output[index++] = ';'; 
+
+    output[index++] = separator; 
     
     if (m >= 10) output[index++] = int(m/10)+48; 
     else output[index++] = '0';
