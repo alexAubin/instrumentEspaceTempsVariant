@@ -174,10 +174,12 @@ void parseShitAndStuff()
                     +     1 * (linea[j+2]-48)
                     +   0.1 * (linea[j+3]-48)
                     +  0.01 * (linea[j+4]-48);
-
+/*
     j = indices[3];
-    char directionlat[1];
+    char directionlat[2];
     directionlat[0] = linea[j+1];
+    directionlat[1] = '/0';
+*/
 
     // Longitude
     j = indices[4];
@@ -186,9 +188,12 @@ void parseShitAndStuff()
                      +     1 * (linea[j+3]-48)
                      +   0.1 * (linea[j+4]-48)
                      +  0.01 * (linea[j+5]-48);
+/*
     j = indices[5];
-    char directionlong[1];
+    char directionlong[2];
     directionlong[0] = linea[j+1];
+    directionlong[1] = '/0';
+*/
 
     // Compute shit for motherfucking stuff
     int N1 = month * 275 / 9;
@@ -283,7 +288,7 @@ void parseShitAndStuff()
     Serial.println(H_var_minutes);
    
   
-    char message[72] = "\0";
+    char message[126] = "\0";
     
     appendString(message,"Hstand: ");
     //hour + 1 for Hstand = UTC+1
@@ -291,15 +296,16 @@ void parseShitAndStuff()
     
     appendString(message,"        ");
     
-    appendString(message, "Svar: ");
-    printFloatInString(message+27, current_S_var);
+    appendString(message, "S_var: ");
+    printFloatInString(message+28, current_S_var);
  
-    appendString(message,"         ");
+    appendString(message,"        ");
 
-    appendString(message,"Hvar: ");
-    printHourInString(message+48, H_var_hours,H_var_minutes, ';');
-    
-    appendString(message,"                                                        ");
+    appendString(message,"H_var: ");
+    printHourInString(message+49, H_var_hours,H_var_minutes, ';');
+
+    appendString(message,"                                                  ");
+
     gotoXY(0, 0);
     LCDString(message);
 
@@ -362,7 +368,7 @@ void printFloatInString(char* output, float f)
     return;
 }
 
-
+/* Find out what's going on here
 void printIntInString(char* output, int i)
 {
     int index = 0;
@@ -383,7 +389,7 @@ void printIntInString(char* output, int i)
 
     return;
 }
-
+*/
 
 
 void printHourInString(char* output, int h, int m, char separator)
