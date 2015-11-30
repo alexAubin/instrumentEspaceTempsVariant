@@ -170,14 +170,15 @@ endif
 # automatically determine sources and targeet
 TARGET := $(basename $(INOFILE))
 SOURCES := $(INOFILE) \
-	$(wildcard *.c *.cc *.cpp hal/*.cpp game/*.cpp lib/*/*.cpp lib/*/*.c) \
+	$(wildcard *.c *.cc *.cpp inkscreen/*.cpp) \
 	$(wildcard $(addprefix util/, *.c *.cc *.cpp)) \
 	$(wildcard $(addprefix utility/, *.c *.cc *.cpp))
 
 # automatically determine included libraries
 LIBRARIES := $(filter $(notdir $(wildcard $(ARDUINODIR)/libraries/*)), \
 	$(shell sed -ne "s/^ *\# *include *[<\"]\(.*\)\.h[>\"]/\1/p" $(SOURCES)))
-
+LIBRARIES += Adafruit_GFX
+LIBRARIES += Adafruit_SHARP_Memory_Display
 endif
 
 # no serial device? make a poor attempt to detect an arduino
@@ -187,6 +188,8 @@ SERIALDEV := $(firstword $(wildcard \
 	/dev/ttyACM? /dev/ttyUSB? /dev/tty.usbserial* /dev/tty.usbmodem*))
 SERIALDEVGUESS := 1
 endif
+
+#SERIALDEV = /dev/ttyACM1
 
 # software
 findsoftware = $(firstword $(wildcard $(addsuffix /$(1), $(AVRTOOLSPATH))))

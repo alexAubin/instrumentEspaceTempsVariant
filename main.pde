@@ -11,10 +11,11 @@
    Display the result in the Arduino's serial monitor.
 
  */ 
-
+hfhshfgiziertuert
 #include <ctype.h>
 #include <math.h>
-#include "LCDInterface.h"
+#include "inkScreen.h"
+//#include "LCDInterface.h"
 
 using namespace std;
 
@@ -23,7 +24,7 @@ int rxPin = 0;                    // RX PIN
 int txPin = 1;                    // TX TX
 int byteGPS=-1;
 char linea[300] = "";
-char comandoGPR[7] = "$GPRMC";
+//char comandoGPR[7] = "$GPRMC";
 int cont=0;
 int bien=0;
 int conta=0;
@@ -41,21 +42,28 @@ void appendString(char* output, char* input);
 
 void setup()
 {
-    pinMode(ledPin, OUTPUT);       // Initialize LED pin
-    pinMode(rxPin, INPUT);
-    pinMode(txPin, OUTPUT);
+    //pinMode(ledPin, OUTPUT);       // Initialize LED pin
+    //pinMode(rxPin, INPUT);
+    //pinMode(txPin, OUTPUT);
+    
     Serial.begin(4800);
+    
     for (int i=0;i<300;i++){       // Initialize a buffer for received data
         linea[i]=' ';
     }
 
-    LCDInit();
+    // start & clear the display
+    display.begin();
+    delay(500);
+    display.refresh();
+    delay(500);
+    display.clearDisplay();
 }
 
 void loop() 
 {
     //Serial.print("test ?\n");
-    digitalWrite(ledPin, HIGH);
+    //digitalWrite(ledPin, HIGH);
     // Read a byte of the serial port
     byteGPS=Serial.read();         
   
@@ -72,13 +80,17 @@ void loop()
         conta++;                      
         //if (byteGPS < 0x10) Serial.print('0'); 
         //Serial.print(byteGPS,HEX);
-        //Serial.print(' ');
+
+        //Serial.print('\n');
         if (byteGPS==0x0D)
-        {            // If the received byte is = to 13, end of transmission
+        {            
+            // If the received byte is = to 13, end of transmission
             // note: the actual end of transmission is <CR><LF> (i.e. 0x13 0x10)
-            digitalWrite(ledPin, LOW); 
+            //digitalWrite(ledPin, LOW); 
             cont=0;
             bien=0;
+            
+            char comandoGPR[7] = "$GPRMC";
             // The following for loop starts at 1, because this code is clowny and the first byte is the <LF> (0x10) from the previous transmission.
             for (int i=1;i<7;i++)
             {     
@@ -132,7 +144,10 @@ void loop()
                 }
                 Serial.println("---------------");
                
+    Serial.println("calling parse");
                 parseShitAndStuff();
+    Serial.println("out parse");
+            
             }
             conta=0;                    // Reset the buffer
             for (int i=0;i<300;i++){    //  
@@ -145,6 +160,7 @@ void loop()
 void parseShitAndStuff()
 {
     Serial.println("----------");
+    Serial.println("in parse");
     // Parse shit and stuff
     int j;
 
@@ -306,8 +322,28 @@ void parseShitAndStuff()
 
     appendString(message,"                                                  ");
 
-    gotoXY(0, 0);
-    LCDString(message);
+    
+    Serial.println("Printing on screen");
+    //gotoXY(0, 0);
+/*
+    display.setTextSize(1);
+    display.setTextColor(WHITE,BLACK);
+    display.setCursor(0,0);
+    display.println(message);
+    display.refresh();
+    delay(500);
+    display.clearDisplay();
+*/
+    display.setTextSize(1);
+    display.setTextColor(BLACK);
+    display.setCursor(0,0);
+    display.println("Hello, world!");
+    display.setTextColor(WHITE, BLACK); // 'inverted' text
+    display.println(3.141592);
+    display.setTextSize(2);
+    display.setTextColor(BLACK);
+    display.print("0x"); display.println(0xDEADBEEF, HEX);
+    display.refresh();
 
 }
 
