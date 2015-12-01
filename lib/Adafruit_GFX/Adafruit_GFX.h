@@ -8,7 +8,12 @@
  #include "WProgram.h"
 #endif
 
-#define swap(a, b) { int16_t t = a; a = b; b = t; }
+
+#define adagfxswap(a, b) { int16_t t = a; a = b; b = t; }
+
+#if !defined(ESP8266)
+  #define swap(a, b) adagfxswap(a, b)
+#endif
 
 class Adafruit_GFX : public Print {
 
@@ -59,7 +64,8 @@ class Adafruit_GFX : public Print {
     setTextColor(uint16_t c, uint16_t bg),
     setTextSize(uint8_t s),
     setTextWrap(boolean w),
-    setRotation(uint8_t r);
+    setRotation(uint8_t r),
+    cp437(boolean x=true);
 
 #if ARDUINO >= 100
   virtual size_t write(uint8_t);
@@ -71,6 +77,10 @@ class Adafruit_GFX : public Print {
   int16_t width(void) const;
 
   uint8_t getRotation(void) const;
+
+  // get current cursor position (get rotation safe maximum values, using: width() for x, height() for y)
+  int16_t getCursorX(void) const;
+  int16_t getCursorY(void) const;
 
  protected:
   const int16_t
@@ -84,7 +94,8 @@ class Adafruit_GFX : public Print {
     textsize,
     rotation;
   boolean
-    wrap; // If set, 'wrap' text at right edge of display
+    wrap,   // If set, 'wrap' text at right edge of display
+    _cp437; // If set, use correct CP437 charset (default is off)
 };
 
 class Adafruit_GFX_Button {

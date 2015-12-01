@@ -35,8 +35,14 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "glcdfont.c"
 #ifdef __AVR__
  #include <avr/pgmspace.h>
+#elif defined(ESP8266)
+ #include <pgmspace.h>
 #else
  #define pgm_read_byte(addr) (*(const unsigned char *)(addr))
+#endif
+
+#ifndef min
+ #define min(a,b) ((a < b) ? a : b)
 #endif
 
 Adafruit_GFX::Adafruit_GFX(int16_t w, int16_t h):
@@ -49,6 +55,7 @@ Adafruit_GFX::Adafruit_GFX(int16_t w, int16_t h):
   textsize  = 1;
   textcolor = textbgcolor = 0xFFFF;
   wrap      = true;
+  _cp437    = false;
 }
 
 // Draw a circle outline
@@ -165,13 +172,13 @@ void Adafruit_GFX::drawLine(int16_t x0, int16_t y0,
 			    uint16_t color) {
   int16_t steep = abs(y1 - y0) > abs(x1 - x0);
   if (steep) {
-    swap(x0, y0);
-    swap(x1, y1);
+    adagfxswap(x0, y0);
+    adagfxswap(x1, y1);
   }
 
   if (x0 > x1) {
-    swap(x0, x1);
-    swap(y0, y1);
+    adagfxswap(x0, x1);
+    adagfxswap(y0, y1);
   }
 
   int16_t dx, dy;
@@ -279,13 +286,13 @@ void Adafruit_GFX::fillTriangle ( int16_t x0, int16_t y0,
 
   // Sort coordinates by Y order (y2 >= y1 >= y0)
   if (y0 > y1) {
-    swap(y0, y1); swap(x0, x1);
+    adagfxswap(y0, y1); adagfxswap(x0, x1);
   }
   if (y1 > y2) {
-    swap(y2, y1); swap(x2, x1);
+    adagfxswap(y2, y1); adagfxswap(x2, x1);
   }
   if (y0 > y1) {
-    swap(y0, y1); swap(x0, x1);
+    adagfxswap(y0, y1); adagfxswap(x0, x1);
   }
 
   if(y0 == y2) { // Handle awkward all-on-same-line case as its own thing
@@ -327,7 +334,7 @@ void Adafruit_GFX::fillTriangle ( int16_t x0, int16_t y0,
     a = x0 + (x1 - x0) * (y - y0) / (y1 - y0);
     b = x0 + (x2 - x0) * (y - y0) / (y2 - y0);
     */
-    if(a > b) swap(a,b);
+    if(a > b) adagfxswap(a,b);
     drawFastHLine(a, y, b-a+1, color);
   }
 
@@ -344,7 +351,7 @@ void Adafruit_GFX::fillTriangle ( int16_t x0, int16_t y0,
     a = x1 + (x2 - x1) * (y - y1) / (y2 - y1);
     b = x0 + (x2 - x0) * (y - y0) / (y2 - y0);
     */
-    if(a > b) swap(a,b);
+    if(a > b) adagfxswap(a,b);
     drawFastHLine(a, y, b-a+1, color);
   }
 }
@@ -436,6 +443,8 @@ void Adafruit_GFX::drawChar(int16_t x, int16_t y, unsigned char c,
      ((y + 8 * size - 1) < 0))   // Clip top
     return;
 
+  if(!_cp437 && (c >= 176)) c++; // Handle 'classic' charset behavior
+
   for (int8_t i=0; i<6; i++ ) {
     uint8_t line;
     if (i == 5) 
@@ -464,6 +473,14 @@ void Adafruit_GFX::drawChar(int16_t x, int16_t y, unsigned char c,
 void Adafruit_GFX::setCursor(int16_t x, int16_t y) {
   cursor_x = x;
   cursor_y = y;
+}
+
+int16_t Adafruit_GFX::getCursorX(void) const {
+  return cursor_x;
+}
+
+int16_t Adafruit_GFX::getCursorY(void) const {
+  return cursor_y;
 }
 
 void Adafruit_GFX::setTextSize(uint8_t s) {
@@ -503,6 +520,17 @@ void Adafruit_GFX::setRotation(uint8_t x) {
     _height = WIDTH;
     break;
   }
+}
+
+// Enable (or disable) Code Page 437-compatible charset.
+// There was an error in glcdfont.c for the longest time -- one character
+// (#176, the 'light shade' block) was missing -- this threw off the index
+// of every character that followed it.  But a TON of code has been written
+// with the erroneous character indices.  By default, the library uses the
+// original 'wrong' behavior and old sketches will still work.  Pass 'true'
+// to this function to use correct CP437 character values in your code.
+void Adafruit_GFX::cp437(boolean x) {
+  _cp437 = x;
 }
 
 // Return the size of the display (per current rotation)
@@ -572,7 +600,7 @@ void Adafruit_GFX_Button::initButton(Adafruit_GFX *gfx,
 
 boolean Adafruit_GFX_Button::contains(int16_t x, int16_t y) {
    if ((x < (_x - _w/2)) || (x > (_x + _w/2))) return false;
-   if ((y < (_y - _h)) || (y > (_y + _h/2))) return false;
+   if ((y < (_y - _h/2)) || (y > (_y + _h/2))) return false;
    return true;
  }
 

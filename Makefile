@@ -142,6 +142,10 @@
 ARDUINODIR=/usr/share/arduino/
 BOARD=uno
 
+CUSTOM_INCLUDES=-I lib/Adafruit_GFX -I lib/Adafruit_SHARP_Memory_Display
+
+everything : clean target upload
+
 # default arduino software directory, check software exists
 ifndef ARDUINODIR
 ARDUINODIR := $(firstword $(wildcard ~/opt/arduino /usr/share/arduino))
@@ -170,15 +174,13 @@ endif
 # automatically determine sources and targeet
 TARGET := $(basename $(INOFILE))
 SOURCES := $(INOFILE) \
-	$(wildcard *.c *.cc *.cpp inkscreen/*.cpp) \
+	$(wildcard *.c *.cc *.cpp lib/*/*.cpp) \
 	$(wildcard $(addprefix util/, *.c *.cc *.cpp)) \
 	$(wildcard $(addprefix utility/, *.c *.cc *.cpp))
 
 # automatically determine included libraries
 LIBRARIES := $(filter $(notdir $(wildcard $(ARDUINODIR)/libraries/*)), \
 	$(shell sed -ne "s/^ *\# *include *[<\"]\(.*\)\.h[>\"]/\1/p" $(SOURCES)))
-LIBRARIES += Adafruit_GFX
-LIBRARIES += Adafruit_SHARP_Memory_Display
 endif
 
 # no serial device? make a poor attempt to detect an arduino
@@ -257,7 +259,7 @@ CPPFLAGS := $(OPTIMIZATION) -Wall -fno-exceptions -ffunction-sections -fdata-sec
 CPPFLAGS += -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
 CPPFLAGS += -mmcu=$(BOARD_BUILD_MCU)
 CPPFLAGS += -DF_CPU=$(BOARD_BUILD_FCPU) -DARDUINO=$(ARDUINOCONST)
-CPPFLAGS += -I. -Iutil -Iutility -I$(ARDUINOCOREDIR)
+CPPFLAGS += -I. -Iutil -Iutility -I$(ARDUINOCOREDIR) $(CUSTOM_INCLUDES)
 CPPFLAGS += -I$(ARDUINODIR)/hardware/arduino/variants/$(BOARD_BUILD_VARIANT)/
 CPPFLAGS += $(addprefix -I$(ARDUINODIR)/libraries/, $(LIBRARIES))
 CPPFLAGS += $(patsubst %, -I$(ARDUINODIR)/libraries/%/utility, $(LIBRARIES))

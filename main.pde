@@ -10,8 +10,7 @@
    Listen for the $GPRMC string and extract the GPS location data from this.
    Display the result in the Arduino's serial monitor.
 
- */ 
-hfhshfgiziertuert
+ */
 #include <ctype.h>
 #include <math.h>
 #include "inkScreen.h"
@@ -19,19 +18,21 @@ hfhshfgiziertuert
 
 using namespace std;
 
-int ledPin = 13;                  // LED test pin
-int rxPin = 0;                    // RX PIN 
-int txPin = 1;                    // TX TX
+// LED test pin
+int ledPin = 13;                  
+// RX PIN
+int rxPin = 0;                    
+// TX TX
+int txPin = 1;                    
 int byteGPS=-1;
 char linea[300] = "";
 //char comandoGPR[7] = "$GPRMC";
 int cont=0;
 int bien=0;
 int conta=0;
-int indices[13];
 bool hasNewStuff = false;
 
-void parseShitAndStuff();
+void parseShitAndStuff(int* indices);
 void printFloat(float f);
 void printFloatln(float f);
 
@@ -39,16 +40,21 @@ void printIntInString(char* output, int i);
 void printFloatInString(char* output, float f);
 void printHourInString(char* output, int h, int m, char separator);
 void appendString(char* output, char* input);
+void printMessageToScreen(char* message);
 
 void setup()
 {
-    //pinMode(ledPin, OUTPUT);       // Initialize LED pin
+    //pinMode(ledPin, OUTPUT);       
+    
+    // Initialize LED pin
     //pinMode(rxPin, INPUT);
     //pinMode(txPin, OUTPUT);
-    
-    Serial.begin(4800);
-    
-    for (int i=0;i<300;i++){       // Initialize a buffer for received data
+
+    Serial.begin(115200);
+    //Serial.begin(9600);
+
+    // Initialize a buffer for received data
+    for (int i=0;i<300;i++){       
         linea[i]=' ';
     }
 
@@ -58,106 +64,123 @@ void setup()
     display.refresh();
     delay(500);
     display.clearDisplay();
+    delay(500);
+
+  // text display tests
+  display.setTextSize(1);
+  display.setTextColor(BLACK);
+  display.setCursor(0,0);
+  display.println("Hello, world!");
+  display.refresh();
+  delay(2000);
+
 }
 
-void loop() 
+void loop()
 {
+    printMessageToScreen("tipi");
+    delay(2000);
+
     //Serial.print("test ?\n");
     //digitalWrite(ledPin, HIGH);
     // Read a byte of the serial port
-    byteGPS=Serial.read();         
-  
-    // See if the port is empty yet
-    if (byteGPS == -1) 
-    {   
-        delay(100); 
-    } 
-    else
-    {
-        hasNewStuff=true;
-        // note: there is a potential buffer overflow here!
-        linea[conta]=byteGPS;        // If there is serial port data, it is put in the buffer
-        conta++;                      
-        //if (byteGPS < 0x10) Serial.print('0'); 
-        //Serial.print(byteGPS,HEX);
+    byteGPS=Serial.read();
 
-        //Serial.print('\n');
-        if (byteGPS==0x0D)
-        {            
-            // If the received byte is = to 13, end of transmission
-            // note: the actual end of transmission is <CR><LF> (i.e. 0x13 0x10)
-            //digitalWrite(ledPin, LOW); 
-            cont=0;
-            bien=0;
-            
-            char comandoGPR[7] = "$GPRMC";
-            // The following for loop starts at 1, because this code is clowny and the first byte is the <LF> (0x10) from the previous transmission.
-            for (int i=1;i<7;i++)
-            {     
-                // Verifies if the received command starts with $GPR
-                if (linea[i]==comandoGPR[i-1])
-                {
-                    bien++;
-                }
-            }
-            if(bien==6)
-            {    
-                // If yes, continue and process the data
-                for (int i=0;i<300;i++)
-                {
-                    if (linea[i]==',')
-                    {   
-                        // check for the position of the  "," separator
-                        // note: again, there is a potential buffer overflow here!
-                        indices[cont]=i;
-                        cont++;
-                    }
-                    if (linea[i]=='*')
-                    {    // ... and the "*"
-                        indices[12]=i;
-                        cont++;
-                    }
-                }
-                 
-                Serial.println("---------------");
-                for (int i=0;i<12;i++){
-                    switch(i)
-                    {
-                        case 0 :Serial.print("Time in UTC (HhMmSs): ");break;
-                        case 1 :Serial.print("Status (A=OK,V=KO): ");break;
-                        case 2 :Serial.print("Latitude: ");break;
-                        case 3 :Serial.print("Direction (N/S): ");break;
-                        case 4 :Serial.print("Longitude: ");break;
-                        case 5 :Serial.print("Direction (E/W): ");break;
-                        case 6 :Serial.print("Velocity in knots: ");break;
-                        case 7 :Serial.print("Heading in degrees: ");break;
-                        case 8 :Serial.print("Date UTC (DdMmAa): ");break;
-                        case 9 :Serial.print("Magnetic degrees: ");break;
-                        case 10 :Serial.print("(E/W): ");break;
-                        case 11 :Serial.print("Mode: ");break;
-                        case 12 :Serial.print("Checksum: ");break;
-                    }
-                    for (int j=indices[i];j<(indices[i+1]-1);j++){
-                        Serial.print(linea[j+1]); 
-                    }
-                    Serial.println("");
-                }
-                Serial.println("---------------");
-               
-    Serial.println("calling parse");
-                parseShitAndStuff();
-    Serial.println("out parse");
-            
-            }
-            conta=0;                    // Reset the buffer
-            for (int i=0;i<300;i++){    //  
-                linea[i]=' ';             
-            }                 
+    // See if the port is empty yet
+    if (byteGPS == -1)
+    {
+        delay(100);
+        return;
+    }
+
+    hasNewStuff=true;
+    // note: there is a potential buffer overflow here!
+    // If there is serial port data, it is put in the buffer
+    linea[conta]=byteGPS;        
+    conta++;
+    //if (byteGPS < 0x10) Serial.print('0');
+    //Serial.print(byteGPS,HEX);
+
+    //Serial.print('\n');
+    if (byteGPS!=0x0D) return;
+    
+    // If the received byte is = to 13, end of transmission
+    // note: the actual end of transmission is <CR><LF> (i.e. 0x13 0x10)
+    //digitalWrite(ledPin, LOW);
+    cont=0;
+    bien=0;
+
+    char comandoGPR[7] = "$GPRMC";
+    // The following for loop starts at 1, because this code is clowny and the first byte is the <LF> (0x10) from the previous transmission.
+    for (int i=1;i<7;i++)
+    {
+        // Verifies if the received command starts with $GPR
+        if (linea[i]==comandoGPR[i-1])
+        {
+            bien++;
         }
     }
+
+    if(bien==6)
+    {
+        int indices[13];
+        
+        // If yes, continue and process the data
+        for (int i=0;i<300;i++)
+        {
+            if (linea[i]==',')
+            {
+                // check for the position of the  "," separator
+                // note: again, there is a potential buffer overflow here!
+                indices[cont]=i;
+                cont++;
+            }
+            if (linea[i]=='*')
+            {    // ... and the "*"
+                indices[12]=i;
+                cont++;
+            }
+        }
+
+         /*
+        Serial.println("---------------");
+        for (int i=0;i<12;i++){
+            switch(i)
+            {
+                case 0  :Serial.print("Time in UTC (HhMmSs): ");break;
+                case 1  :Serial.print("Status (A=OK,V=KO): ");break;
+                case 2  :Serial.print("Latitude: ");break;
+                case 3  :Serial.print("Direction (N/S): ");break;
+                case 4  :Serial.print("Longitude: ");break;
+                case 5  :Serial.print("Direction (E/W): ");break;
+                case 6  :Serial.print("Velocity in knots: ");break;
+                case 7  :Serial.print("Heading in degrees: ");break;
+                case 8  :Serial.print("Date UTC (DdMmAa): ");break;
+                case 9  :Serial.print("Magnetic degrees: ");break;
+                case 10 :Serial.print("(E/W): ");break;
+                case 11 :Serial.print("Mode: ");break;
+                case 12 :Serial.print("Checksum: ");break;
+            }
+            for (int j=indices[i];j<(indices[i+1]-1);j++){
+                Serial.print(linea[j+1]);
+            }
+            Serial.println("");
+        }
+        Serial.println("---------------");
+        */
+
+        parseShitAndStuff(indices);
+
+    }
+    conta=0;                    // Reset the buffer
+    for (int i=0;i<300;i++){    //
+        linea[i]=' ';
+    }
+
+
 }
 
-void parseShitAndStuff()
+void parseShitAndStuff(int* indices)
 {
     Serial.println("----------");
     Serial.println("in parse");
@@ -186,7 +209,7 @@ void parseShitAndStuff()
 
     // Latitude
     j = indices[2];
-    float latitude  =    10 * (linea[j+1]-48) 
+    float latitude  =    10 * (linea[j+1]-48)
                     +     1 * (linea[j+2]-48)
                     +   0.1 * (linea[j+3]-48)
                     +  0.01 * (linea[j+4]-48);
@@ -199,7 +222,7 @@ void parseShitAndStuff()
 
     // Longitude
     j = indices[4];
-    float longitude  =   100 * (linea[j+1]-48) 
+    float longitude  =   100 * (linea[j+1]-48)
                      +    10 * (linea[j+2]-48)
                      +     1 * (linea[j+3]-48)
                      +   0.1 * (linea[j+4]-48)
@@ -232,7 +255,7 @@ void parseShitAndStuff()
 
     int Hlever_hours   = int(Hlever);
     int Hlever_minutes = int((Hlever - Hlever_hours) * 60);
-    
+
     int Hcoucher_hours   = int(Hcoucher);
     int Hcoucher_minutes = int((Hcoucher - Hcoucher_hours) * 60);
 
@@ -240,7 +263,7 @@ void parseShitAndStuff()
     Serial.print(Hlever_hours);
     Serial.print(":");
     Serial.println(Hlever_minutes);
-    
+
     Serial.print("H_coucher : ");
     Serial.print(Hcoucher_hours);
     Serial.print(":");
@@ -254,7 +277,7 @@ void parseShitAndStuff()
 
     int Sol_duree_hours   = int(Sol_duree);
     int Sol_duree_minutes = int((Sol_duree - Sol_duree_hours) * 60);
-    
+
     Serial.print("Sol_duree : ");
     Serial.print(Sol_duree_hours);
     Serial.print(":");
@@ -293,7 +316,7 @@ void parseShitAndStuff()
     }
     else
     {
-        H_var = delta_coucher + (1.0/S_var_mean-1) * Night_duree / 2.0 * (1.0 - cos(delta_coucher * M_PI / Night_duree)); 
+        H_var = delta_coucher + (1.0/S_var_mean-1) * Night_duree / 2.0 * (1.0 - cos(delta_coucher * M_PI / Night_duree));
     }
     int H_var_hours = int(H_var);
     int H_var_minutes = (H_var - H_var_hours) * 60;
@@ -302,19 +325,19 @@ void parseShitAndStuff()
     Serial.print(H_var_hours);
     Serial.print(";");
     Serial.println(H_var_minutes);
-   
-  
+
+
     char message[126] = "\0";
-    
+
     appendString(message,"Hstand: ");
     //hour + 1 for Hstand = UTC+1
     printHourInString(message+8, hour + 1, minutes, ':');
-    
+
     appendString(message,"        ");
-    
+
     appendString(message, "S_var: ");
     printFloatInString(message+28, current_S_var);
- 
+
     appendString(message,"        ");
 
     appendString(message,"H_var: ");
@@ -322,29 +345,25 @@ void parseShitAndStuff()
 
     appendString(message,"                                                  ");
 
-    
+
     Serial.println("Printing on screen");
     //gotoXY(0, 0);
-/*
-    display.setTextSize(1);
-    display.setTextColor(WHITE,BLACK);
-    display.setCursor(0,0);
-    display.println(message);
-    display.refresh();
-    delay(500);
-    display.clearDisplay();
-*/
-    display.setTextSize(1);
-    display.setTextColor(BLACK);
-    display.setCursor(0,0);
-    display.println("Hello, world!");
-    display.setTextColor(WHITE, BLACK); // 'inverted' text
-    display.println(3.141592);
-    display.setTextSize(2);
-    display.setTextColor(BLACK);
-    display.print("0x"); display.println(0xDEADBEEF, HEX);
-    display.refresh();
 
+    return;
+    printMessageToScreen("tipi                   ");
+
+    return;
+    printMessageToScreen(message);
+}
+
+void printMessageToScreen(char* message)
+{
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(BLACK);
+  display.setCursor(0,0);
+  display.println(message);
+  display.refresh();
 }
 
 void appendString(char* output, char* input)
@@ -354,7 +373,7 @@ void appendString(char* output, char* input)
 
     for (int j = 0 ; input[j] != '\0' ; j++)
     {
-        output[i++] = input[j]; 
+        output[i++] = input[j];
     }
     output[i] = '\0';
 
@@ -363,7 +382,7 @@ void appendString(char* output, char* input)
 
 void printFloat(float f)
 {
-    if (f < 0) 
+    if (f < 0)
     {
         Serial.print('-');
         f = -f;
@@ -373,7 +392,7 @@ void printFloat(float f)
     else Serial.print('0');
 
     Serial.print('.');
-   
+
     f = f - int(f);    int a = int(f *    10);  Serial.print(a);
     f = f - a * 0.1;   int b = int(f *   100);  Serial.print(b);
     f = f - b * 0.01;  int c = int(f *  1000);  Serial.print(c);
@@ -383,20 +402,20 @@ void printFloat(float f)
 void printFloatInString(char* output, float f)
 {
     int index = 0;
-    if (f < 0) 
+    if (f < 0)
     {
         output[index++] = '-';
         f = -f;
     }
 
-    if (f > 1) output[index++] = (int(f)+48); 
-    else output[index++] = '0'; 
+    if (f > 1) output[index++] = (int(f)+48);
+    else output[index++] = '0';
 
-    output[index++] = '.'; 
-   
-    f -= int(f);    int a = int(f *    10); output[index++] = a+48; 
-    f -= a * 0.1;   int b = int(f *   100); output[index++] = b+48; 
-    f -= b * 0.01;  int c = int(f *  1000); output[index++] = c+48; 
+    output[index++] = '.';
+
+    f -= int(f);    int a = int(f *    10); output[index++] = a+48;
+    f -= a * 0.1;   int b = int(f *   100); output[index++] = b+48;
+    f -= b * 0.01;  int c = int(f *  1000); output[index++] = c+48;
     f -= c * 0.001; int d = int(f * 10000); output[index++] = d+48;
 
     output[index] = '\0';
@@ -408,19 +427,19 @@ void printFloatInString(char* output, float f)
 void printIntInString(char* output, int i)
 {
     int index = 0;
-    if (i < 0) 
+    if (i < 0)
     {
         output[index++] = '-';
         i = -i;
     }
 
-    if (i >= 10) 
+    if (i >= 10)
     {
-        output[index++] = (int(i/10)+48); 
-    i = (int) (i / 10);  
+        output[index++] = (int(i/10)+48);
+    i = (int) (i / 10);
     }
-    
-    output[index++] = (int(i)+48); 
+
+    output[index++] = (int(i)+48);
     output[index] = '\0';
 
     return;
@@ -432,19 +451,19 @@ void printHourInString(char* output, int h, int m, char separator)
 {
     int index = 0;
 
-    if (h >= 10) output[index++] = int(h/10)+48; 
+    if (h >= 10) output[index++] = int(h/10)+48;
     else output[index++] = '0';
-    if (h > 1)  output[index++] = int(h - (h/10)*10)+48; 
+    if (h > 1)  output[index++] = int(h - (h/10)*10)+48;
     else output[index++] = '0';
 
 
-    output[index++] = separator; 
-    
-    if (m >= 10) output[index++] = int(m/10)+48; 
+    output[index++] = separator;
+
+    if (m >= 10) output[index++] = int(m/10)+48;
     else output[index++] = '0';
-    if (m > 1)  output[index++] = int(m - (m/10)*10)+48; 
+    if (m > 1)  output[index++] = int(m - (m/10)*10)+48;
     else output[index++] = '0';
-    
+
     output[index] = '\0';
 
     return;
