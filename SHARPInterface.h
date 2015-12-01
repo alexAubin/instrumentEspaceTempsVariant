@@ -1,17 +1,20 @@
 #ifndef INKSCREEN_H
 #define INKSCREEN_H
 
+#include "common.h"
 #include "Adafruit_GFX.h"
 #include "Adafruit_SharpMem.h"
 
-// any pins can be used
-#define SCK 10
+#define SCK  10
 #define MOSI 11
-#define SS 13
+#define SS   13
 
-Adafruit_SharpMem display(SCK, MOSI, SS);
+extern Adafruit_SharpMem SHARPdisplay;
 
 #define BLACK 0
 #define WHITE 1
+
+void initDisplay();
+void printMessageToScreen(char* message);
 
 #endif
