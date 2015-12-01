@@ -8,15 +8,15 @@ void addByteToBuffer(int byte);
 bool parseDataFromGPS();
 
 GPSInterface gpsInterface;
-SoftwareSerial gpsSerial(GPS_PIN_TX,GPS_PIN_RX);
+//SoftwareSerial gpsSerial(GPS_PIN_TX,GPS_PIN_RX);
 
 // ###########################################################################
 
 void initGPSInterface()
 {
-    DEBUG(F("Initializing GPS..."));
-    gpsSerial.begin(9600);
+    Serial.begin(4800);
     resetGPSInterface();
+    DEBUG(F("Initializing GPS..."));
 }
 
 void resetGPSInterface()
@@ -44,15 +44,13 @@ void addByteToBuffer(int byte)
 bool readGPS()
 {
     // Read a byte of the serial port
-    int byteFromGPS = gpsSerial.read();
+    int byteFromGPS = Serial.read();
 
     // If byte is empty, just wait a bit and return
     if (byteFromGPS == -1)
     {
         return false;
     }
-
-    DEBUG((char) byteFromGPS);
 
     // Else, we have new stuff to read.
     // Put the new byte in the buffer
@@ -105,6 +103,14 @@ bool parseDataFromGPS()
     DEBUG(F("---------------"));
     for (int i=0;i<12;i++)
     {
+        if ((i == 3)
+        ||  (i == 5)
+        ||  (i == 6)
+        ||  (i == 7)
+        ||  (i == 9)
+        ||  (i == 10)
+        ||  (i == 11)) continue;
+
         switch(i)
         {
             case 0  :DEBUG(F("Time in UTC (HhMmSs): ")); break;

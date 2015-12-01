@@ -29,8 +29,8 @@ char messageForDisplay[126];
 
 void setup()
 {
-    Serial.begin(9600);
-    DEBUG(F("Starting Serial debug..."));
+    //Serial.begin(9600);
+    //DEBUG(F("Starting Serial debug..."));
 
     initGPSInterface();
     initDisplay();
@@ -39,7 +39,13 @@ void setup()
 
     delay(1000);
     
-    //printMessageToScreen("Hello from the screen !");
+//    printMessageToScreen("Hello from the screen !");
+    SHARPdisplay.clearDisplay();
+    SHARPdisplay.setTextSize(1);
+    SHARPdisplay.setTextColor(BLACK);
+    SHARPdisplay.setCursor(0,0);
+    SHARPdisplay.println("Hello from the screen !");
+    SHARPdisplay.refresh();
 
     delay(1000);
 }
@@ -52,8 +58,8 @@ void loop()
     if (newData)
     {
         DEBUG(F("Received stuff !"));
-        //updateIGTV();
-        //printMessageToScreen(messageForDisplay);
+        updateIGTV();
+        printMessageToScreen(messageForDisplay);
         resetGPSInterface();
     }
     
@@ -63,7 +69,6 @@ void loop()
 void updateIGTV()
 {
     
-    DEBUG(F("----------"));
     DEBUG(F("in parse"));
    
     char* dataFromGPS = gpsInterface.dataFromGPS;
@@ -79,12 +84,13 @@ void updateIGTV()
     int seconds = 10 * (dataFromGPS[j+5]-48) + (dataFromGPS[j+6]-48);
     float current_time = hour + (minutes / 60.0) + (seconds / 3600.0);
 
-    DEBUG(F("Hour (UTC +0) : "));
-    DEBUG(hour);
-    DEBUG(F(":"));
-    DEBUG(minutes);
-    DEBUG(F(":"));
-    DEBUG(seconds);
+    //DEBUG_NOLN(F("Hour (UTC +0) : "));
+    //DEBUG(hour);
+    //DEBUG(F(":"));
+    //DEBUG(minutes);
+    //DEBUG(F(":"));
+    //DEBUG(seconds);
+    //DEBUG_NOLN(F("calc : "));
 
     // Date
     j = indices[8];
@@ -132,15 +138,15 @@ void updateIGTV()
     int Hcoucher_hours   = int(Hcoucher);
     int Hcoucher_minutes = int((Hcoucher - Hcoucher_hours) * 60);
 
-    DEBUG(F("H_lever : "));
-    DEBUG(Hlever_hours);
-    DEBUG(F(":"));
-    DEBUG(Hlever_minutes);
+    //DEBUG_NOLN(F("H_lever : "));
+    //DEBUG_NOLN(Hlever_hours);
+    //DEBUG_NOLN(F(":"));
+    //DEBUG(Hlever_minutes);
 
-    DEBUG(F("H_coucher : "));
-    DEBUG(Hcoucher_hours);
-    DEBUG(F(":"));
-    DEBUG(Hcoucher_minutes);
+    //DEBUG_NOLN(F("H_coucher : "));
+    //DEBUG_NOLN(Hcoucher_hours);
+    //DEBUG_NOLN(F(":"));
+    //DEBUG(Hcoucher_minutes);
 
     float delta_lever   = current_time - Hlever;
     float delta_coucher = current_time - Hcoucher;
@@ -151,15 +157,15 @@ void updateIGTV()
     int Sol_duree_hours   = int(Sol_duree);
     int Sol_duree_minutes = int((Sol_duree - Sol_duree_hours) * 60);
 
-    DEBUG(F("Sol_duree : "));
-    DEBUG(Sol_duree_hours);
-    DEBUG(F(":"));
-    DEBUG(Sol_duree_minutes);
+    //DEBUG_NOLN(F("Sol_duree : "));
+    //DEBUG_NOLN(Sol_duree_hours);
+    //DEBUG_NOLN(F(":"));
+    //DEBUG(Sol_duree_minutes);
 
-    DEBUG(F("Delta lever : "));
-    printFloatln(delta_lever);
-    DEBUG(F("Delta coucher : "));
-    printFloatln(delta_coucher);
+    //DEBUG(F("Delta lever : "));
+    //printFloatln(delta_lever);
+    //DEBUG(F("Delta coucher : "));
+    //printFloatln(delta_coucher);
 
     float S_var_mean;
     float current_S_var;
@@ -176,11 +182,11 @@ void updateIGTV()
         current_S_var = 1.0 + (S_var_mean - 1.0) * M_PI / 2.0 * sin(delta_coucher * M_PI / Night_duree);
     }
 
-    DEBUG(F("Moyenne de S-var : "));
-    printFloatln(S_var_mean);
+    //DEBUG_NOLN(F("Moyenne de S-var : "));
+    //printFloatln(S_var_mean);
     
-    DEBUG(F("Current_S-var : "));
-    printFloatln(current_S_var);
+    //DEBUG_NOLN(F("Current_S-var : "));
+    //printFloatln(current_S_var);
 
     float H_var;
     if ((current_time > Hlever) && (current_time < Hcoucher))
@@ -194,10 +200,10 @@ void updateIGTV()
     int H_var_hours = int(H_var);
     int H_var_minutes = (H_var - H_var_hours) * 60;
 
-    DEBUG(F("Current H-var : "));
-    DEBUG(H_var_hours);
-    DEBUG(F(";"));
-    DEBUG(H_var_minutes);
+    //DEBUG_NOLN(F("Current H-var : "));
+    //DEBUG(H_var_hours);
+    //DEBUG_NOLN(F(";"));
+    //DEBUG(H_var_minutes);
 
 
     messageForDisplay[0] = '\0';    
@@ -216,9 +222,9 @@ void updateIGTV()
     appendString(messageForDisplay,"H_var: ");
     printHourInString(messageForDisplay+49, H_var_hours,H_var_minutes, ';');
 
-    appendString(messageForDisplay,"                                                  ");
-
     DEBUG(F("Printing on screen"));
+
+    DEBUG(messageForDisplay);
     //gotoXY(0, 0);
 
 }

@@ -4,8 +4,8 @@
 
 #include "Arduino.h"
 
-#define DEBUG(message)      Serial.println(message)
-#define DEBUG_NOLN(message) Serial.print  (message)
+#define DEBUG(message)      Serial.println(message); Serial.flush()
+#define DEBUG_NOLN(message) Serial.print  (message); Serial.flush()
 //#define DEBUG(message)
 
 using namespace std;

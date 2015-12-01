@@ -19,19 +19,19 @@ void printFloat(float f)
 {
     if (f < 0)
     {
-        DEBUG('-');
+        DEBUG_NOLN('-');
         f = -f;
     }
 
-    if (f > 1) DEBUG(int(f));
-    else DEBUG('0');
+    if (f > 1) { DEBUG_NOLN(int(f)); }
+    else { DEBUG_NOLN('0'); }
 
-    DEBUG('.');
+    DEBUG_NOLN('.');
 
-    f = f - int(f);    int a = int(f *    10);  DEBUG(a);
-    f = f - a * 0.1;   int b = int(f *   100);  DEBUG(b);
-    f = f - b * 0.01;  int c = int(f *  1000);  DEBUG(c);
-    f = f - c * 0.001; int d = int(f * 10000);  DEBUG(d);
+    f = f - int(f);    int a = int(f *    10);  DEBUG_NOLN(a);
+    f = f - a * 0.1;   int b = int(f *   100);  DEBUG_NOLN(b);
+    f = f - b * 0.01;  int c = int(f *  1000);  DEBUG_NOLN(c);
+    f = f - c * 0.001; int d = int(f * 10000);  DEBUG_NOLN(d);
 }
 
 void printFloatInString(char* output, float f)
@@ -107,7 +107,7 @@ void printHourInString(char* output, int h, int m, char separator)
 void printFloatln(float f)
 {
     printFloat(f);
-    DEBUG('\n');
+    DEBUG_NOLN('\n');
 }
 
 
